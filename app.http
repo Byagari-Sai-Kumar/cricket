@@ -1,7 +1,4 @@
 ###
-GET http://localhost:6000/
-
-###
 GET  http://localhost:6000/players/
 
 ###

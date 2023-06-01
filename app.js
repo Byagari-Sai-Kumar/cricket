@@ -26,6 +26,21 @@ const initializeDBAndServer = async () => {
 
 initializeDBAndServer();
 
+const convertPlayerDbObjectToResponseObject = (dbObject) => {
+  return {
+    playerId: dbObject.player_id,
+    playerName: dbObject.player_name,
+  };
+};
+
+const convertMatchDetailsDbObjectToResponseObject = (dbObject) => {
+  return {
+    matchId: dbObject.match_id,
+    match: dbObject.match,
+    year: dbObject.year,
+  };
+};
+
 //get players API1
 app.get("/players/", async (request, response) => {
   const playersDetailsQuery = `
@@ -36,12 +51,16 @@ app.get("/players/", async (request, response) => {
 
   const players = await db.all(playersDetailsQuery);
 
-  response.send(players);
+  response.send(
+    players.map((eachPlayer) =>
+      convertPlayerDbObjectToResponseObject(eachPlayer)
+    )
+  );
 });
 
 //get single player API2
 app.get("/players/:playerId/", async (request, response) => {
-  const playerId = request.params;
+  const { playerId } = request.params;
 
   const getPlayerDetailsQuery = `
     SELECT
@@ -53,22 +72,20 @@ app.get("/players/:playerId/", async (request, response) => {
 
   const playerDetails = await db.get(getPlayerDetailsQuery);
 
-  response.send(playerDetails);
+  response.send(convertPlayerDbObjectToResponseObject(playerDetails));
 });
 
 //update player name API3
 app.put("/players/:playerId/", async (request, response) => {
-  const playerId = request.params;
+  const { playerId } = request.params;
 
-  const playerDetails = request.body;
-
-  const { playerName } = playerDetails;
+  const { playerName } = request.body;
 
   const updatePlayerNameQuery = `
     UPDATE 
     player_details
     SET
-    player_name = ${playerName}
+    player_name = '${playerName}'
     WHERE 
     player_id = ${playerId};`;
 
@@ -79,7 +96,7 @@ app.put("/players/:playerId/", async (request, response) => {
 
 //get match details API4
 app.get("/matches/:matchId/", async (request, response) => {
-  const matchId = request.params;
+  const { matchId } = request.params;
 
   const getMatchDetailsQuery = `
     SELECT
@@ -91,12 +108,12 @@ app.get("/matches/:matchId/", async (request, response) => {
 
   const matchDetails = await db.get(getMatchDetailsQuery);
 
-  response.send(matchDetails);
+  response.send(convertMatchDetailsDbObjectToResponseObject(matchDetails));
 });
 
 //get match details with playerId API5
 app.get("/players/:playerId/matches", async (request, response) => {
-  const playerId = request.params;
+  const { playerId } = request.params;
 
   const matchDetailsOfPlayerQuery = `
     SELECT
@@ -112,12 +129,16 @@ app.get("/players/:playerId/matches", async (request, response) => {
 
   const matchDetails = await db.all(matchDetailsOfPlayerQuery);
 
-  response.send(matchDetails);
+  response.send(
+    matchDetails.map((eachMatch) =>
+      convertMatchDetailsDbObjectToResponseObject(eachMatch)
+    )
+  );
 });
 
 //get player details on matchId API6
 app.get("/matches/:matchId/players", async (request, response) => {
-  const matchId = request.params;
+  const { matchId } = request.params;
 
   const getPlayerDetailsQuery = `
     SELECT
@@ -132,12 +153,16 @@ app.get("/matches/:matchId/players", async (request, response) => {
 
   const playerDetails = await db.all(getPlayerDetailsQuery);
 
-  response.send(playerDetails);
+  response.send(
+    playerDetails.map((eachPlayer) =>
+      convertPlayerDbObjectToResponseObject(eachPlayer)
+    )
+  );
 });
 
 //get player total score API7
 app.get("/players/:playerId/playerScores", async (request, response) => {
-  const playerId = request.params;
+  const { playerId } = request.params;
 
   const getPlayerTotalScoreQuery = `
     SELECT
@@ -145,7 +170,7 @@ app.get("/players/:playerId/playerScores", async (request, response) => {
     player_details.player_name AS playerName,
     SUM(player_match_score.score) AS totalScore,
     SUM(player_match_score.fours) AS totalFours,
-    SUM(player_match_score.sixes) AS totalSixes,
+    SUM(player_match_score.sixes) AS totalSixes
     FROM
     player_details
     INNER JOIN player_match_score
